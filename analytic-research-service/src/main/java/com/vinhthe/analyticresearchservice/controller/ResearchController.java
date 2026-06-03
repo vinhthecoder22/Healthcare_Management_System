@@ -41,9 +41,9 @@ public class ResearchController {
     }
 
     @GetMapping("/applied/all")
-    public ResponseEntity<?> getAllTakenResearchers()
+    public ResponseEntity<?> getAllValidResearchers()
             throws CustomException {
-        log.info("Inside getAllTakenResearchers method of ResearchController");
+        log.info("Inside getAllValidResearchers method of ResearchController");
         return new ResponseEntity<>(researcherService.getAllValidResearchers(), HttpStatus.OK);
     }
 
@@ -56,11 +56,11 @@ public class ResearchController {
     }
 
     @GetMapping("/taken/all")
-    public ResponseEntity<?> getAllValidResearchers()
+    public ResponseEntity<?> getAllTakenResearchers()
             throws CustomException {
-        log.info("Inside getAllValidResearchers method of ResearchController");
+        log.info("Inside getAllTakenResearchers method of ResearchController");
 
-        return new ResponseEntity<>(researcherService.getAllValidResearchers(), HttpStatus.CREATED);
+        return new ResponseEntity<>(researcherService.getAllTakenResearchers(), HttpStatus.CREATED);
     }
 
     @GetMapping("/get/analytic-data/{id}")
@@ -92,7 +92,8 @@ public class ResearchController {
             throws CustomException {
         log.info("Inside giveAccessToResearcher method of ResearchController");
         researcherService.giveAccessToResearcher(id);
-        return new ResponseEntity<>(new ResponseMessageDto("Access granted successfully!", HttpStatus.OK),
+        return new ResponseEntity<>(
+                new ResponseMessageDto("Access granted and research data email sent successfully!", HttpStatus.OK),
                 HttpStatus.OK);
     }
 }

@@ -1,10 +1,20 @@
 package com.vinhthe.pharmaceuticalinventoryservice.constants;
 
 public class AppConstants {
-    public static final String TOKEN_SECRET = System.getenv("JWT_TOKEN_SECRET") != null
-            ? System.getenv("JWT_TOKEN_SECRET")
-            : "9eac628c872d1fb3d806a82e95df1841d70e18dc96b664bff865d0bbe3e55ec1595b2f1672cf947c86541b22daef211021831091b8b5b6a4f2561f6e2e319bdb";
-    public static final long EXPIRATION_TIME = 864000000; // 10 days
+    private AppConstants() {
+        throw new IllegalStateException("Utility class");
+    }
+
+    public static final String TOKEN_SECRET = System.getenv("JWT_TOKEN_SECRET");
+
+    static {
+        if (TOKEN_SECRET == null || TOKEN_SECRET.isBlank()) {
+            throw new IllegalStateException(
+                    "JWT_TOKEN_SECRET environment variable is not configured");
+        }
+    }
+
+    public static final long EXPIRATION_TIME = 864000000L; // 10 days
 
     public static final String SIGN_IN = "/users/login";
     public static final String SIGN_UP = "/users/register";
@@ -14,6 +24,6 @@ public class AppConstants {
     public static final String ROLE_PATIENT = "Patient";
     public static final String ROLE_DOCTOR = "Doctor";
     public static final String USER_UNAUTHORIZED = "You are not authorized to access this!";
-    public static final String USER_NOTFOUND = "User does not exist!";
+    public static final String USER_NOT_FOUND = "User does not exist!";
     public static final String TOKEN_INVALID = "Token is invalid!";
 }
