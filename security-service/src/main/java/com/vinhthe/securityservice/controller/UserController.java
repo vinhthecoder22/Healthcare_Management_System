@@ -8,6 +8,7 @@ import com.vinhthe.securityservice.repository.UserRepository;
 import com.vinhthe.securityservice.service.RecoveryService;
 import com.vinhthe.securityservice.service.UserService;
 import com.vinhthe.securityservice.utils.JwtUtils;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -24,90 +25,92 @@ import java.util.List;
 @RequestMapping("/users")
 public class UserController {
 
-    @Autowired
-    private UserService userService;
-    @Autowired
-    private RecoveryService recoveryService;
-    @Autowired
-    private AuthenticationManager authenticationManager;
-    @Autowired
-    private UserRepository userRepository;
+        @Autowired
+        private UserService userService;
+        @Autowired
+        private RecoveryService recoveryService;
+        @Autowired
+        private AuthenticationManager authenticationManager;
+        @Autowired
+        private UserRepository userRepository;
 
-    @PostMapping("/register")
-    public ResponseEntity<UserRegistrationResponseDto> register(@RequestBody UserRegistrationRequestDto userDto)
-            throws CustomException {
-        log.info("Inside register method of UserController");
-        UserDto responseUser = userService.createUser(userDto);
-        UserRegistrationResponseDto userRegistrationResponse = new UserRegistrationResponseDto(
-                "User registered successfully", HttpStatus.CREATED, responseUser);
+        @PostMapping("/register")
+        public ResponseEntity<UserRegistrationResponseDto> register(
+                        @Valid @RequestBody UserRegistrationRequestDto userDto)
+                        throws CustomException {
+                log.info("Inside register method of UserController");
+                UserDto responseUser = userService.createUser(userDto);
+                UserRegistrationResponseDto userRegistrationResponse = new UserRegistrationResponseDto(
+                                "User registered successfully", HttpStatus.CREATED, responseUser);
 
-        return new ResponseEntity<>(userRegistrationResponse, HttpStatus.CREATED);
-    }
-
-    @PostMapping("/login")
-    public ResponseEntity<UserLoginResponseDto> login(@RequestBody UserLoginRequestDto userLoginRequestDto)
-            throws CustomException {
-        log.info("Inside register method of UserController");
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(userLoginRequestDto.getEmail(),
-                        userLoginRequestDto.getPassword()));
-        UserDto userDto = userService.getUserByEmail(userLoginRequestDto.getEmail());
-
-        UserEntity user = userRepository.findUserByEmail(userLoginRequestDto.getEmail())
-                .orElseThrow(() -> new CustomException(
-                        new ResponseMessageDto("No user found with email: " + userLoginRequestDto.getEmail(),
-                                HttpStatus.BAD_REQUEST),
-                        HttpStatus.BAD_REQUEST));
-
-        if (!user.isActive()) {
-            throw new CustomException(new ResponseMessageDto("User is not active, wait or contact admin for activation",
-                    HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>(userRegistrationResponse, HttpStatus.CREATED);
         }
 
-        List<String> userRoles = new ArrayList<>();
-        userRoles.add(String.valueOf(userDto.getRole()));
+        @PostMapping("/login")
+        public ResponseEntity<UserLoginResponseDto> login(@RequestBody UserLoginRequestDto userLoginRequestDto)
+                        throws CustomException {
+                log.info("Inside register method of UserController");
+                authenticationManager.authenticate(
+                                new UsernamePasswordAuthenticationToken(userLoginRequestDto.getEmail(),
+                                                userLoginRequestDto.getPassword()));
+                UserDto userDto = userService.getUserByEmail(userLoginRequestDto.getEmail());
 
-        String accessToken = JwtUtils.generateToken(userDto.getEmail(), userRoles);
+                UserEntity user = userRepository.findUserByEmail(userLoginRequestDto.getEmail())
+                                .orElseThrow(() -> new CustomException(new ResponseMessageDto(
+                                                "No user found with email: " + userLoginRequestDto.getEmail(),
+                                                HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST));
 
-        UserLoginDetailsDto responseDto = new UserLoginDetailsDto(
-                userDto.getId(),
-                userDto.getEmail(),
-                userDto.getRole(),
-                AppConstants.TOKEN_PREFIX + accessToken);
+                if (!user.isActive()) {
+                        throw new CustomException(new ResponseMessageDto(
+                                        "User is not active, wait or contact admin for activation",
+                                        HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
+                }
 
-        UserLoginResponseDto loginResponseDto = new UserLoginResponseDto(
-                "Login successful", HttpStatus.OK, responseDto);
+                List<String> userRoles = new ArrayList<>();
+                userRoles.add(String.valueOf(userDto.getRole()));
 
-        return new ResponseEntity<>(loginResponseDto, HttpStatus.OK);
-    }
+                String accessToken = JwtUtils.generateToken(userDto.getEmail(), userRoles);
 
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<ResponseMessageDto> deleteUser(@PathVariable Long id)
-            throws CustomException {
-        log.info("Received request to delete user with ID: {}", id);
-        userService.deleteUserById(id);
+                UserLoginDetailsDto responseDto = new UserLoginDetailsDto(
+                                userDto.getId(),
+                                userDto.getEmail(),
+                                userDto.getRole(),
+                                AppConstants.TOKEN_PREFIX + accessToken);
 
-        ResponseMessageDto responseMessageDto = new ResponseMessageDto("User deleted successfully", HttpStatus.OK);
-        return new ResponseEntity<>(responseMessageDto, HttpStatus.OK);
-    }
+                UserLoginResponseDto loginResponseDto = new UserLoginResponseDto(
+                                "Login successful", HttpStatus.OK, responseDto);
 
-    @GetMapping("/id/{id}")
-    public ResponseEntity<UserDto> getUserById(@PathVariable Long id)
-            throws CustomException {
-        log.info("Received request to get user with ID: {}", id);
-        UserDto userDto = userService.getUserById(id);
-        return new ResponseEntity<>(userDto, HttpStatus.OK);
-    }
+                return new ResponseEntity<>(loginResponseDto, HttpStatus.OK);
+        }
 
-    @PostMapping("/recovery/{email}")
-    public ResponseEntity<?> recoveryAccount(@PathVariable String email) throws CustomException {
-        log.info("Received request to recovery user with email: {}", email);
-        return new ResponseEntity<>(recoveryService.sendMail(email), HttpStatus.OK);
-    }
+        @DeleteMapping("/delete/{id}")
+        public ResponseEntity<ResponseMessageDto> deleteUser(@PathVariable Long id)
+                        throws CustomException {
+                log.info("Received request to delete user with ID: {}", id);
+                userService.deleteUserById(id);
 
-    @PostMapping("/recovery/verify")
-    public ResponseEntity<?> verifyCode(@RequestBody VerifyCodeDto verifyCodeDto) throws CustomException {
-        log.info("Received request to verify user with email: {}", verifyCodeDto.getEmail());
-        return new ResponseEntity<>(recoveryService.verifyCode(verifyCodeDto), HttpStatus.OK);
-    }
+                ResponseMessageDto responseMessageDto = new ResponseMessageDto("User deleted successfully",
+                                HttpStatus.OK);
+                return new ResponseEntity<>(responseMessageDto, HttpStatus.OK);
+        }
+
+        @GetMapping("/id/{id}")
+        public ResponseEntity<UserDto> getUserById(@PathVariable Long id)
+                        throws CustomException {
+                log.info("Received request to get user with ID: {}", id);
+                UserDto userDto = userService.getUserById(id);
+                return new ResponseEntity<>(userDto, HttpStatus.OK);
+        }
+
+        @PostMapping("/recovery/{email}")
+        public ResponseEntity<?> recoveryAccount(@PathVariable String email) throws CustomException {
+                log.info("Received request to recovery user with email: {}", email);
+                return new ResponseEntity<>(recoveryService.sendMail(email), HttpStatus.OK);
+        }
+
+        @PostMapping("/recovery/verify")
+        public ResponseEntity<?> verifyCode(@RequestBody VerifyCodeDto verifyCodeDto) throws CustomException {
+                log.info("Received request to verify user with email: {}", verifyCodeDto.getEmail());
+                return new ResponseEntity<>(recoveryService.verifyCode(verifyCodeDto), HttpStatus.OK);
+        }
 }
